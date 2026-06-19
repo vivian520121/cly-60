@@ -1,4 +1,4 @@
-import { Highlighter, MessageSquare, Bookmark, Edit3, Plus, Menu } from 'lucide-react';
+import { Highlighter, MessageSquare, Bookmark, Edit3, Plus, Menu, Eye, EyeOff } from 'lucide-react';
 import { useQuoteStore } from '../../store/useQuoteStore';
 import type { ActiveTool, HighlightColor } from '../../types';
 
@@ -19,7 +19,17 @@ const colorMap: Record<HighlightColor, string> = {
 };
 
 export function Toolbar() {
-  const { activeTool, setActiveTool, highlightColor, setHighlightColor, toggleSidebar, openEditor, getCurrentQuote } = useQuoteStore();
+  const {
+    activeTool,
+    setActiveTool,
+    highlightColor,
+    setHighlightColor,
+    toggleSidebar,
+    openEditor,
+    getCurrentQuote,
+    annotationsVisible,
+    toggleAnnotations,
+  } = useQuoteStore();
   const currentQuote = getCurrentQuote();
 
   const handleToolClick = (tool: ActiveTool) => {
@@ -63,6 +73,18 @@ export function Toolbar() {
               </button>
             );
           })}
+
+          <button
+            onClick={toggleAnnotations}
+            className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 ${
+              annotationsVisible
+                ? 'bg-blue-500 text-white'
+                : 'bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-white hover:text-gray-800'
+            }`}
+            title={annotationsVisible ? '隐藏批注' : '显示批注'}
+          >
+            {annotationsVisible ? <Eye size={18} /> : <EyeOff size={18} />}
+          </button>
 
           <button
             onClick={() => openEditor()}

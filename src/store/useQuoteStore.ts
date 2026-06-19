@@ -42,7 +42,7 @@ const defaultQuotes: Quote[] = [
       { id: 'h2', startIndex: 45, endIndex: 62, color: 'pink' },
     ],
     annotations: [
-      { id: 'a1', content: '生活总是在好与坏之间摇摆', position: 30 },
+      { id: 'a1', content: '生活总是在好与坏之间摇摆', position: 30, startIndex: 28, endIndex: 44 },
     ],
     bookmarked: true,
     order: 0,
@@ -78,7 +78,7 @@ const defaultQuotes: Quote[] = [
       { id: 'h4', startIndex: 0, endIndex: 12, color: 'green' },
     ],
     annotations: [
-      { id: 'a2', content: '喜欢这种慢生活的意境', position: 10 },
+      { id: 'a2', content: '喜欢这种慢生活的意境', position: 10, startIndex: 0, endIndex: 12 },
     ],
     bookmarked: true,
     order: 2,
@@ -129,7 +129,7 @@ const defaultQuotes: Quote[] = [
       { id: 'h6', startIndex: 0, endIndex: 14, color: 'yellow' },
     ],
     annotations: [
-      { id: 'a3', content: '理想与现实的抉择', position: 5 },
+      { id: 'a3', content: '理想与现实的抉择', position: 5, startIndex: 0, endIndex: 14 },
     ],
     bookmarked: true,
     order: 5,
@@ -155,6 +155,7 @@ export const useQuoteStore = create<QuoteStore>()(
       flipDirection: null,
       pageSettings: defaultPageSettings,
       pageSettingsOpen: false,
+      annotationsVisible: true,
 
       setCurrentTemplate: (template: BookTemplate) => set({ currentTemplate: template }),
 
@@ -169,6 +170,9 @@ export const useQuoteStore = create<QuoteStore>()(
       setActiveTool: (tool: ActiveTool) => set({ activeTool: tool }),
 
       setHighlightColor: (color: HighlightColor) => set({ highlightColor: color }),
+
+      toggleAnnotations: () =>
+        set((state) => ({ annotationsVisible: !state.annotationsVisible })),
 
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 

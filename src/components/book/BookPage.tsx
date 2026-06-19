@@ -20,14 +20,20 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     addHighlight,
     removeHighlight,
     addAnnotation,
+    removeAnnotation,
     toggleBookmark,
     currentTemplate,
     pageSettings,
+    annotationsVisible,
   } = useQuoteStore();
 
   const [showAnnotationInput, setShowAnnotationInput] = useState(false);
   const [annotationPosition, setAnnotationPosition] = useState(0);
+  const [annotationStartIndex, setAnnotationStartIndex] = useState(0);
+  const [annotationEndIndex, setAnnotationEndIndex] = useState(0);
   const [annotationText, setAnnotationText] = useState('');
+
+  const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
 
   useEffect(() => {
     if (showAnnotationInput && annotationInputRef.current) {
@@ -87,6 +93,8 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
       const selection = getTextSelection();
       if (selection) {
         setAnnotationPosition(selection.startIndex);
+        setAnnotationStartIndex(selection.startIndex);
+        setAnnotationEndIndex(selection.endIndex);
         setShowAnnotationInput(true);
         setAnnotationText('');
       }
@@ -102,6 +110,8 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
       addAnnotation(quote.id, {
         content: annotationText,
         position: annotationPosition,
+        startIndex: annotationStartIndex,
+        endIndex: annotationEndIndex,
       });
     }
     setShowAnnotationInput(false);
@@ -118,6 +128,17 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     if (quote && activeTool === 'highlight') {
       removeHighlight(quote.id, highlightId);
     }
+  };
+
+  const handleAnnotationClick = (annotation: Annotation) => {
+    setSelectedAnnotation(annotation);
+  };
+
+  const handleDeleteAnnotation = (annotationId: string) => {
+    if (quote) {
+      removeAnnotation(quote.id, annotationId);
+    }
+    setSelectedAnnotation(null);
   };
 
   const pageBgClass =
@@ -215,28 +236,36 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
           <HighlightedText
             text={quote.content}
             highlights={quote.highlights}
+            annotations={quote.annotations}
+            annotationsVisible={annotationsVisible}
             onHighlightClick={handleHighlightClick}
+            onAnnotationClick={handleAnnotationClick}
           />
         </div>
 
-        {quote.annotations.map((annotation: Annotation) => {
-          const totalLength = quote.content.length || 1;
-          const positionRatio = Math.min(Math.max(annotation.position / totalLength, 0.08), 0.85);
-          const topPercent = 15 + positionRatio * 65;
-          return (
-            <div
-              key={annotation.id}
-              className="annotation-bubble"
-              style={{
-                top: `${topPercent}%`,
-                left: pageSide === 'left' ? 'auto' : '90%',
-                right: pageSide === 'left' ? '90%' : 'auto',
-              }}
-            >
-              {annotation.content}
-            </div>
-          );
-        })}
+        {annotationsVisible &&
+          quote.annotations.map((annotation: Annotation) => {
+            const totalLength = quote.content.length || 1;
+            const positionRatio = Math.min(Math.max(annotation.position / totalLength, 0.08), 0.85);
+            const topPercent = 15 + positionRatio * 65;
+            return (
+              <div
+                key={annotation.id}
+                className="annotation-bubble cursor-pointer hover:scale-105 transition-transform"
+                style={{
+                  top: `${topPercent}%`,
+                  left: pageSide === 'left' ? 'auto' : '90%',
+                  right: pageSide === 'left' ? '90%' : 'auto',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedAnnotation(annotation);
+                }}
+              >
+                {annotation.content}
+              </div>
+            );
+          })}
 
         <div className={`mt-6 text-center ${textLightClass} text-sm ${bodyFontClass} opacity-70`}>
           — {pageNumber} / {totalPages} —
@@ -282,6 +311,45 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
                 onMouseUp={(e) => e.stopPropagation()}
               >
                 保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedAnnotation && (
+        <div
+          className="absolute inset-0 bg-black/20 flex items-center justify-center z-50"
+          onClick={() => setSelectedAnnotation(null)}
+          onMouseUp={(e) => e.stopPropagation()}
+        >
+          <div
+            className="bg-white rounded-lg p-4 shadow-xl w-80"
+            onClick={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`text-sm font-medium ${textColorClass}`}>批注</h3>
+              <button
+                onClick={() => handleDeleteAnnotation(selectedAnnotation.id)}
+                className="text-red-500 hover:text-red-600 text-xs hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                onMouseUp={(e) => e.stopPropagation()}
+              >
+                删除
+              </button>
+            </div>
+            <div
+              className={`text-sm ${textColorClass} ${bodyFontClass} leading-relaxed bg-amber-50 p-3 rounded-md border border-amber-200`}
+            >
+              {selectedAnnotation.content}
+            </div>
+            <div className="flex justify-end mt-3">
+              <button
+                onClick={() => setSelectedAnnotation(null)}
+                className={`px-4 py-1.5 text-sm rounded ${accentClass.replace('text-', 'bg-')} text-white hover:opacity-90 transition-opacity`}
+                onMouseUp={(e) => e.stopPropagation()}
+              >
+                关闭
               </button>
             </div>
           </div>

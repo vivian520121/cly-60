@@ -19,6 +19,8 @@ export interface Annotation {
   id: string;
   content: string;
   position: number;
+  startIndex: number;
+  endIndex: number;
 }
 
 export interface Quote {
@@ -60,12 +62,14 @@ export interface QuoteStore {
   flipDirection: 'next' | 'prev' | null;
   pageSettings: PageSettings;
   pageSettingsOpen: boolean;
+  annotationsVisible: boolean;
 
   setCurrentTemplate: (template: BookTemplate) => void;
   setPageSettings: (settings: Partial<PageSettings>) => void;
   togglePageSettings: () => void;
   setActiveTool: (tool: ActiveTool) => void;
   setHighlightColor: (color: HighlightColor) => void;
+  toggleAnnotations: () => void;
   toggleSidebar: () => void;
   setFilterTagId: (tagId: string | null) => void;
   openEditor: (quoteId?: string) => void;
