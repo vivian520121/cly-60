@@ -20,6 +20,13 @@ export function useExportImage() {
       padding: 0;
     `;
 
+    const highlightColorMap: Record<string, string> = {
+      yellow: 'linear-gradient(120deg, rgba(253, 224, 71, 0.6) 0%, rgba(253, 224, 71, 0.4) 100%)',
+      green: 'linear-gradient(120deg, rgba(134, 239, 172, 0.6) 0%, rgba(134, 239, 172, 0.4) 100%)',
+      pink: 'linear-gradient(120deg, rgba(249, 168, 212, 0.6) 0%, rgba(249, 168, 212, 0.4) 100%)',
+      blue: 'linear-gradient(120deg, rgba(147, 197, 253, 0.6) 0%, rgba(147, 197, 253, 0.4) 100%)',
+    };
+
     quoteList.forEach((quote, index) => {
       const page = document.createElement('div');
       
@@ -52,7 +59,24 @@ export function useExportImage() {
         color: ${textColor};
         box-sizing: border-box;
         border-bottom: 1px solid rgba(0,0,0,0.1);
+        overflow: hidden;
       `;
+
+      if (quote.bookmarked) {
+        const bookmark = document.createElement('div');
+        bookmark.style.cssText = `
+          position: absolute;
+          top: 0;
+          right: 40px;
+          width: 32px;
+          height: 56px;
+          background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
+          z-index: 10;
+          clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+          box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+        `;
+        page.appendChild(bookmark);
+      }
 
       const title = document.createElement('h2');
       title.style.cssText = `
@@ -60,6 +84,7 @@ export function useExportImage() {
         font-weight: 600;
         margin-bottom: 8px;
         color: ${textColor};
+        margin: 0 0 8px 0;
       `;
       title.textContent = quote.bookTitle;
       page.appendChild(title);
@@ -70,6 +95,7 @@ export function useExportImage() {
         color: ${textColor};
         opacity: 0.7;
         margin-bottom: 32px;
+        margin-top: 0;
       `;
       meta.textContent = `${quote.author} · 第 ${quote.pageNumber} 页`;
       page.appendChild(meta);
@@ -80,9 +106,100 @@ export function useExportImage() {
         line-height: 2;
         color: ${textColor};
         text-indent: 2em;
+        position: relative;
       `;
-      content.textContent = quote.content;
+
+      const text = quote.content;
+      if (quote.highlights.length > 0) {
+        const sortedHighlights = [...quote.highlights].sort((a, b) => a.startIndex - b.startIndex);
+        let lastIndex = 0;
+
+        sortedHighlights.forEach((highlight) => {
+          if (highlight.startIndex > lastIndex) {
+            const normalText = document.createElement('span');
+            normalText.textContent = text.slice(lastIndex, highlight.startIndex);
+            content.appendChild(normalText);
+          }
+
+          if (highlight.startIndex < text.length && highlight.endIndex > lastIndex) {
+            const start = Math.max(highlight.startIndex, lastIndex);
+            const end = Math.min(highlight.endIndex, text.length);
+            const highlightSpan = document.createElement('span');
+            highlightSpan.textContent = text.slice(start, end);
+            const bgGradient = highlightColorMap[highlight.color] || highlightColorMap.yellow;
+            highlightSpan.style.cssText = `
+              background: ${bgGradient};
+              padding: 2px 2px;
+              border-radius: 2px;
+              box-decoration-break: clone;
+              -webkit-box-decoration-break: clone;
+            `;
+            content.appendChild(highlightSpan);
+            lastIndex = end;
+          }
+        });
+
+        if (lastIndex < text.length) {
+          const tailText = document.createElement('span');
+          tailText.textContent = text.slice(lastIndex);
+          content.appendChild(tailText);
+        }
+      } else {
+        content.textContent = text;
+      }
       page.appendChild(content);
+
+      quote.annotations.forEach((annotation, aIndex) => {
+        const bubble = document.createElement('div');
+        bubble.style.cssText = `
+          position: absolute;
+          top: ${Math.min(35 + aIndex * 22, 70)}%;
+          right: 10px;
+          max-width: 140px;
+          padding: 8px 12px;
+          background: #fffbeb;
+          border: 1px solid #fcd34d;
+          border-radius: 8px;
+          font-size: 12px;
+          line-height: 1.5;
+          color: #78350f;
+          box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+          font-family: 'Ma Shan Zheng', 'KaiTi', cursive;
+          z-index: 5;
+        `;
+
+        const tail = document.createElement('div');
+        tail.style.cssText = `
+          position: absolute;
+          right: -8px;
+          top: 12px;
+          width: 0;
+          height: 0;
+          border-top: 6px solid transparent;
+          border-bottom: 6px solid transparent;
+          border-left: 8px solid #fcd34d;
+        `;
+        bubble.appendChild(tail);
+
+        const tailInner = document.createElement('div');
+        tailInner.style.cssText = `
+          position: absolute;
+          right: -6px;
+          top: 13px;
+          width: 0;
+          height: 0;
+          border-top: 5px solid transparent;
+          border-bottom: 5px solid transparent;
+          border-left: 7px solid #fffbeb;
+        `;
+        bubble.appendChild(tailInner);
+
+        const bubbleText = document.createElement('div');
+        bubbleText.textContent = annotation.content;
+        bubble.appendChild(bubbleText);
+
+        page.appendChild(bubble);
+      });
 
       if (quote.tags.length > 0) {
         const tagsContainer = document.createElement('div');
@@ -140,11 +257,16 @@ export function useExportImage() {
     try {
       const container = createExportContainer(quotes);
 
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       const canvas = await html2canvas(container, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
+        logging: false,
+        windowWidth: container.scrollWidth,
+        windowHeight: container.scrollHeight,
       });
 
       document.body.removeChild(container);
