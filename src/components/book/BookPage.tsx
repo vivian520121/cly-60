@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import type { Quote, BookTemplate, Annotation, HighlightColor } from '../../types';
 import { HighlightedText } from '../marks/HighlightedText';
 import { useQuoteStore } from '../../store/useQuoteStore';
@@ -13,6 +13,7 @@ interface BookPageProps {
 
 export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: BookPageProps) {
   const contentRef = useRef<HTMLDivElement>(null);
+  const annotationInputRef = useRef<HTMLTextAreaElement>(null);
   const {
     activeTool,
     highlightColor,
@@ -27,6 +28,14 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
   const [showAnnotationInput, setShowAnnotationInput] = useState(false);
   const [annotationPosition, setAnnotationPosition] = useState(0);
   const [annotationText, setAnnotationText] = useState('');
+
+  useEffect(() => {
+    if (showAnnotationInput && annotationInputRef.current) {
+      setTimeout(() => {
+        annotationInputRef.current?.focus();
+      }, 0);
+    }
+  }, [showAnnotationInput]);
 
   const pageTemplate = template || quote?.template || currentTemplate;
 
@@ -63,7 +72,7 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
   }, [quote?.content]);
 
   const handleMouseUp = useCallback(() => {
-    if (!quote) return;
+    if (!quote || showAnnotationInput) return;
 
     if (activeTool === 'highlight') {
       const selection = getTextSelection();
@@ -86,7 +95,7 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     if (activeTool === 'highlight' || activeTool === 'annotation') {
       window.getSelection()?.removeAllRanges();
     }
-  }, [activeTool, quote, getTextSelection, addHighlight, highlightColor]);
+  }, [activeTool, quote, getTextSelection, addHighlight, highlightColor, showAnnotationInput]);
 
   const handleAddAnnotation = () => {
     if (quote && annotationText.trim()) {
@@ -210,19 +219,24 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
           />
         </div>
 
-        {quote.annotations.map((annotation: Annotation, index: number) => (
-          <div
-            key={annotation.id}
-            className="annotation-bubble"
-            style={{
-              top: `${Math.min(30 + index * 20, 70)}%`,
-              left: pageSide === 'left' ? 'auto' : '90%',
-              right: pageSide === 'left' ? '90%' : 'auto',
-            }}
-          >
-            {annotation.content}
-          </div>
-        ))}
+        {quote.annotations.map((annotation: Annotation) => {
+          const totalLength = quote.content.length || 1;
+          const positionRatio = Math.min(Math.max(annotation.position / totalLength, 0.08), 0.85);
+          const topPercent = 15 + positionRatio * 65;
+          return (
+            <div
+              key={annotation.id}
+              className="annotation-bubble"
+              style={{
+                top: `${topPercent}%`,
+                left: pageSide === 'left' ? 'auto' : '90%',
+                right: pageSide === 'left' ? '90%' : 'auto',
+              }}
+            >
+              {annotation.content}
+            </div>
+          );
+        })}
 
         <div className={`mt-6 text-center ${textLightClass} text-sm ${bodyFontClass} opacity-70`}>
           — {pageNumber} / {totalPages} —
@@ -230,13 +244,19 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
       </div>
 
       {showAnnotationInput && (
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-50" onClick={() => setShowAnnotationInput(false)}>
+        <div
+          className="absolute inset-0 bg-black/20 flex items-center justify-center z-50"
+          onClick={() => setShowAnnotationInput(false)}
+          onMouseUp={(e) => e.stopPropagation()}
+        >
           <div
             className="bg-white rounded-lg p-4 shadow-xl w-72"
             onClick={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
           >
             <h3 className={`text-sm font-medium mb-3 ${textColorClass}`}>添加批注</h3>
             <textarea
+              ref={annotationInputRef}
               value={annotationText}
               onChange={(e) => setAnnotationText(e.target.value)}
               className={`w-full h-24 p-2 border rounded-md text-sm ${bodyFontClass} focus:outline-none focus:ring-2 ${
@@ -246,18 +266,20 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
                 'focus:ring-blue-300 border-blue-200'
               }`}
               placeholder="写下你的想法..."
-              autoFocus
+              onMouseUp={(e) => e.stopPropagation()}
             />
-            <div className="flex justify-end gap-2 mt-3">
+            <div className="flex justify-end gap-2 mt-3" onMouseUp={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setShowAnnotationInput(false)}
                 className={`px-3 py-1 text-sm rounded ${textLightClass} hover:bg-gray-100`}
+                onMouseUp={(e) => e.stopPropagation()}
               >
                 取消
               </button>
               <button
                 onClick={handleAddAnnotation}
                 className={`px-3 py-1 text-sm rounded text-white ${accentClass.replace('text-', 'bg-')}`}
+                onMouseUp={(e) => e.stopPropagation()}
               >
                 保存
               </button>
