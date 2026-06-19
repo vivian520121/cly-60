@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import type { Quote, BookTemplate, Annotation, HighlightColor } from '../../types';
 import { HighlightedText } from '../marks/HighlightedText';
 import { useQuoteStore } from '../../store/useQuoteStore';
@@ -23,12 +23,6 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     currentTemplate,
   } = useQuoteStore();
 
-  const [selectedText, setSelectedText] = useState<{
-    text: string;
-    startIndex: number;
-    endIndex: number;
-  } | null>(null);
-
   const [showAnnotationInput, setShowAnnotationInput] = useState(false);
   const [annotationPosition, setAnnotationPosition] = useState(0);
   const [annotationText, setAnnotationText] = useState('');
@@ -40,22 +34,22 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     if (!selection || selection.rangeCount === 0 || !contentRef.current) return null;
 
     const range = selection.getRangeAt(0);
-    const selectedText = selection.toString().trim();
+    const selectedStr = selection.toString().trim();
 
-    if (!selectedText || !contentRef.current.contains(range.startContainer)) {
+    if (!selectedStr || !contentRef.current.contains(range.startContainer)) {
       return null;
     }
 
     const fullText = quote?.content || '';
-    const startIndex = fullText.indexOf(selectedText);
+    const startIndex = fullText.indexOf(selectedStr);
 
     if (startIndex === -1) {
       return null;
     }
 
-    const endIndex = startIndex + selectedText.length;
+    const endIndex = startIndex + selectedStr.length;
 
-    return { text: selectedText, startIndex, endIndex };
+    return { text: selectedStr, startIndex, endIndex };
   }, [quote?.content]);
 
   const handleMouseUp = useCallback(() => {
@@ -64,7 +58,11 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     if (activeTool === 'highlight') {
       const selection = getTextSelection();
       if (selection && selection.text.trim()) {
-        setSelectedText(selection);
+        addHighlight(quote.id, {
+          startIndex: selection.startIndex,
+          endIndex: selection.endIndex,
+          color: highlightColor as HighlightColor,
+        });
       }
     } else if (activeTool === 'annotation') {
       const selection = getTextSelection();
@@ -78,18 +76,7 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     if (activeTool === 'highlight' || activeTool === 'annotation') {
       window.getSelection()?.removeAllRanges();
     }
-  }, [activeTool, quote, getTextSelection]);
-
-  useEffect(() => {
-    if (selectedText && quote && activeTool === 'highlight') {
-      addHighlight(quote.id, {
-        startIndex: selectedText.startIndex,
-        endIndex: selectedText.endIndex,
-        color: highlightColor as HighlightColor,
-      });
-      setSelectedText(null);
-    }
-  }, [selectedText, quote, activeTool, highlightColor, addHighlight]);
+  }, [activeTool, quote, getTextSelection, addHighlight, highlightColor]);
 
   const handleAddAnnotation = () => {
     if (quote && annotationText.trim()) {

@@ -135,7 +135,7 @@ export function BookReader() {
               pageSide="left"
               pageNumber={leftPageNum}
               totalPages={totalPages}
-              template={leftPageQuote?.template || currentTemplate}
+              template={currentTemplate}
             />
           </div>
 
@@ -152,7 +152,7 @@ export function BookReader() {
               pageSide="right"
               pageNumber={rightPageNum}
               totalPages={totalPages}
-              template={rightPageQuote?.template || currentTemplate}
+              template={currentTemplate}
             />
           </div>
 
