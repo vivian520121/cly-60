@@ -156,8 +156,12 @@ export const useQuoteStore = create<QuoteStore>()(
       pageSettings: defaultPageSettings,
       pageSettingsOpen: false,
       annotationsVisible: true,
+      importModalOpen: false,
 
       setCurrentTemplate: (template: BookTemplate) => set({ currentTemplate: template }),
+
+      toggleImportModal: () =>
+        set((state) => ({ importModalOpen: !state.importModalOpen })),
 
       setPageSettings: (settings: Partial<PageSettings>) =>
         set((state) => ({
@@ -205,6 +209,22 @@ export const useQuoteStore = create<QuoteStore>()(
         set((state) => ({
           quotes: [...state.quotes, newQuote],
         }));
+      },
+
+      importQuotes: (quotesData) => {
+        const now = new Date().toISOString();
+        const baseOrder = get().quotes.length;
+        const newQuotes: Quote[] = quotesData.map((quoteData, index) => ({
+          ...quoteData,
+          id: generateId(),
+          order: baseOrder + index,
+          createdAt: now,
+          updatedAt: now,
+        }));
+        set((state) => ({
+          quotes: [...state.quotes, ...newQuotes],
+        }));
+        return newQuotes.length;
       },
 
       updateQuote: (id, updates) => {

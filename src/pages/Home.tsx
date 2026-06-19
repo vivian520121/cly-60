@@ -4,6 +4,7 @@ import { PageSettings } from '../components/book/PageSettings';
 import { Toolbar } from '../components/editor/Toolbar';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { QuoteEditor } from '../components/editor/QuoteEditor';
+import { ImportNotesModal } from '../components/editor/ImportNotesModal';
 
 export default function Home() {
   return (
@@ -33,6 +34,9 @@ export default function Home() {
 
       {/* 编辑器弹窗 */}
       <QuoteEditor />
+
+      {/* 导入弹窗 */}
+      <ImportNotesModal />
     </div>
   );
 }

@@ -1,11 +1,11 @@
-import { X, Download, Plus } from 'lucide-react';
+import { X, Download, Plus, Upload } from 'lucide-react';
 import { useQuoteStore } from '../../store/useQuoteStore';
 import { TagFilter } from './TagFilter';
 import { QuoteList } from './QuoteList';
 import { useExportImage } from '../../hooks/useExportImage';
 
 export function Sidebar() {
-  const { sidebarOpen, toggleSidebar, quotes, tags, addTag, getFilteredQuotes } = useQuoteStore();
+  const { sidebarOpen, toggleSidebar, quotes, tags, addTag, getFilteredQuotes, toggleImportModal } = useQuoteStore();
   const { exportAllQuotes, isExporting } = useExportImage();
   const filteredQuotes = getFilteredQuotes();
 
@@ -78,6 +78,13 @@ export function Sidebar() {
 
           {/* 底部操作 */}
           <div className="p-4 border-t border-amber-200/50 space-y-2">
+            <button
+              onClick={toggleImportModal}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/70 text-amber-700 font-medium hover:bg-white transition-all border border-amber-200"
+            >
+              <Upload size={18} />
+              导入读书笔记
+            </button>
             <button
               onClick={exportAllQuotes}
               disabled={isExporting || quotes.length === 0}

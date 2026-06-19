@@ -63,8 +63,10 @@ export interface QuoteStore {
   pageSettings: PageSettings;
   pageSettingsOpen: boolean;
   annotationsVisible: boolean;
+  importModalOpen: boolean;
 
   setCurrentTemplate: (template: BookTemplate) => void;
+  toggleImportModal: () => void;
   setPageSettings: (settings: Partial<PageSettings>) => void;
   togglePageSettings: () => void;
   setActiveTool: (tool: ActiveTool) => void;
@@ -76,6 +78,7 @@ export interface QuoteStore {
   closeEditor: () => void;
 
   addQuote: (quote: Omit<Quote, 'id' | 'createdAt' | 'updatedAt' | 'order'>) => void;
+  importQuotes: (quotes: Omit<Quote, 'id' | 'createdAt' | 'updatedAt' | 'order'>[]) => number;
   updateQuote: (id: string, updates: Partial<Quote>) => void;
   deleteQuote: (id: string) => void;
 
