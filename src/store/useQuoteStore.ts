@@ -9,9 +9,16 @@ import type {
   QuoteStore,
   Highlight,
   Annotation,
+  PageSettings,
 } from '../types';
 
 const generateId = () => Math.random().toString(36).substring(2, 11);
+
+const defaultPageSettings: PageSettings = {
+  yellowing: 30,
+  roughness: 30,
+  margin: 50,
+};
 
 const defaultTags: Tag[] = [
   { id: 'tag-1', name: '治愈', color: '#7cb342' },
@@ -146,8 +153,18 @@ export const useQuoteStore = create<QuoteStore>()(
       editingQuoteId: null,
       isFlipping: false,
       flipDirection: null,
+      pageSettings: defaultPageSettings,
+      pageSettingsOpen: false,
 
       setCurrentTemplate: (template: BookTemplate) => set({ currentTemplate: template }),
+
+      setPageSettings: (settings: Partial<PageSettings>) =>
+        set((state) => ({
+          pageSettings: { ...state.pageSettings, ...settings },
+        })),
+
+      togglePageSettings: () =>
+        set((state) => ({ pageSettingsOpen: !state.pageSettingsOpen })),
 
       setActiveTool: (tool: ActiveTool) => set({ activeTool: tool }),
 
@@ -385,6 +402,7 @@ export const useQuoteStore = create<QuoteStore>()(
         quotes: state.quotes,
         tags: state.tags,
         currentTemplate: state.currentTemplate,
+        pageSettings: state.pageSettings,
       }),
     }
   )

@@ -21,6 +21,7 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     addAnnotation,
     toggleBookmark,
     currentTemplate,
+    pageSettings,
   } = useQuoteStore();
 
   const [showAnnotationInput, setShowAnnotationInput] = useState(false);
@@ -28,6 +29,15 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
   const [annotationText, setAnnotationText] = useState('');
 
   const pageTemplate = template || quote?.template || currentTemplate;
+
+  const roughnessOpacity = (pageSettings.roughness / 100) * 0.25;
+  const yellowingOpacity = (pageSettings.yellowing / 100) * 0.6;
+  const paddingValue = `${2 + (pageSettings.margin / 100) * 4}rem`;
+
+  const pageStyle = {
+    '--paper-roughness': roughnessOpacity,
+    '--paper-yellowing': yellowingOpacity,
+  } as React.CSSProperties;
 
   const getTextSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -153,8 +163,10 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
         className={`book-page paper-texture ${
           pageSide === 'left' ? 'book-page-left' : 'book-page-right'
         } ${pageBgClass} flex-1 h-full flex items-center justify-center`}
+        style={pageStyle}
       >
-        <p className={`${textLightClass} text-lg opacity-50`}>无内容</p>
+        <div className="yellowing-overlay" />
+        <p className={`${textLightClass} text-lg opacity-50 relative z-10`}>无内容</p>
       </div>
     );
   }
@@ -164,15 +176,18 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
       className={`book-page paper-texture ${
         pageSide === 'left' ? 'book-page-left page-edge-left' : 'book-page-right page-edge-right'
       } ${pageBgClass} flex-1 h-full relative overflow-hidden flex flex-col`}
+      style={pageStyle}
       onClick={handlePageClick}
       onMouseUp={handleMouseUp}
     >
+      <div className="yellowing-overlay" />
+
       {quote.bookmarked && (
-        <div className="bookmark-ribbon" style={{ right: pageSide === 'left' ? '20px' : 'auto', left: pageSide === 'right' ? '20px' : 'auto' }}>
+        <div className="bookmark-ribbon relative z-10" style={{ right: pageSide === 'left' ? '20px' : 'auto', left: pageSide === 'right' ? '20px' : 'auto' }}>
         </div>
       )}
 
-      <div className="flex-1 p-8 md:p-10 lg:p-12 flex flex-col relative z-10">
+      <div className="flex-1 flex flex-col relative z-10" style={{ padding: paddingValue }}>
         <div className={`mb-6 ${pageTemplate === 'newspaper' ? 'border-b-2 border-gray-400 pb-4' : ''}`}>
           <h2
             className={`text-xl md:text-2xl font-semibold ${textColorClass} ${titleFontClass} mb-2 text-shadow-soft`}

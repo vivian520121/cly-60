@@ -7,9 +7,13 @@ export function useExportImage() {
   const [isExporting, setIsExporting] = useState(false);
   const exportContainerRef = useRef<HTMLDivElement>(null);
 
-  const { quotes, getTagById } = useQuoteStore();
+  const { quotes, getTagById, pageSettings } = useQuoteStore();
 
   const createExportContainer = useCallback((quoteList: Quote[]) => {
+    const paddingValue = `${40 + (pageSettings.margin / 100) * 80}px`;
+    const roughnessOpacity = (pageSettings.roughness / 100) * 0.25;
+    const yellowingOpacity = (pageSettings.yellowing / 100) * 0.6;
+
     const container = document.createElement('div');
     container.style.cssText = `
       position: fixed;
@@ -51,7 +55,7 @@ export function useExportImage() {
       page.style.cssText = `
         width: 100%;
         min-height: 800px;
-        padding: 60px;
+        padding: ${paddingValue};
         background: ${bgColor};
         position: relative;
         break-inside: avoid;
@@ -61,6 +65,44 @@ export function useExportImage() {
         border-bottom: 1px solid rgba(0,0,0,0.1);
         overflow: hidden;
       `;
+
+      const noiseOverlay = document.createElement('div');
+      noiseOverlay.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        opacity: ${roughnessOpacity};
+        pointer-events: none;
+        mix-blend-mode: multiply;
+        z-index: 1;
+      `;
+      page.appendChild(noiseOverlay);
+
+      const yellowingOverlay = document.createElement('div');
+      yellowingOverlay.style.cssText = `
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 204, 102, ${yellowingOpacity}) 0%,
+          rgba(255, 187, 85, ${yellowingOpacity * 0.7}) 50%,
+          rgba(230, 153, 51, ${yellowingOpacity * 0.5}) 100%
+        );
+        mix-blend-mode: multiply;
+        z-index: 2;
+      `;
+      page.appendChild(yellowingOverlay);
+
+      const vignetteOverlay = document.createElement('div');
+      vignetteOverlay.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.06) 100%);
+        pointer-events: none;
+        z-index: 3;
+      `;
+      page.appendChild(vignetteOverlay);
 
       if (quote.bookmarked) {
         const bookmark = document.createElement('div');
@@ -85,6 +127,8 @@ export function useExportImage() {
         margin-bottom: 8px;
         color: ${textColor};
         margin: 0 0 8px 0;
+        position: relative;
+        z-index: 5;
       `;
       title.textContent = quote.bookTitle;
       page.appendChild(title);
@@ -96,6 +140,8 @@ export function useExportImage() {
         opacity: 0.7;
         margin-bottom: 32px;
         margin-top: 0;
+        position: relative;
+        z-index: 5;
       `;
       meta.textContent = `${quote.author} · 第 ${quote.pageNumber} 页`;
       page.appendChild(meta);
@@ -107,6 +153,7 @@ export function useExportImage() {
         color: ${textColor};
         text-indent: 2em;
         position: relative;
+        z-index: 5;
       `;
 
       const text = quote.content;
@@ -208,6 +255,8 @@ export function useExportImage() {
           flex-wrap: wrap;
           gap: 8px;
           margin-top: 40px;
+          position: relative;
+          z-index: 5;
         `;
 
         quote.tags.forEach((tagId) => {
@@ -238,6 +287,7 @@ export function useExportImage() {
         font-size: 12px;
         color: ${textColor};
         opacity: 0.5;
+        z-index: 5;
       `;
       pageNum.textContent = `— ${index + 1} / ${quoteList.length} —`;
       page.appendChild(pageNum);
@@ -247,7 +297,7 @@ export function useExportImage() {
 
     document.body.appendChild(container);
     return container;
-  }, [getTagById]);
+  }, [getTagById, pageSettings]);
 
   const exportAllQuotes = useCallback(async () => {
     if (quotes.length === 0) return;

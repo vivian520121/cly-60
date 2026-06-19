@@ -1,5 +1,11 @@
 export type BookTemplate = 'ancient' | 'notebook' | 'newspaper' | 'letter';
 
+export interface PageSettings {
+  yellowing: number;
+  roughness: number;
+  margin: number;
+}
+
 export type HighlightColor = 'yellow' | 'green' | 'pink' | 'blue';
 
 export interface Highlight {
@@ -52,8 +58,12 @@ export interface QuoteStore {
   editingQuoteId: string | null;
   isFlipping: boolean;
   flipDirection: 'next' | 'prev' | null;
+  pageSettings: PageSettings;
+  pageSettingsOpen: boolean;
 
   setCurrentTemplate: (template: BookTemplate) => void;
+  setPageSettings: (settings: Partial<PageSettings>) => void;
+  togglePageSettings: () => void;
   setActiveTool: (tool: ActiveTool) => void;
   setHighlightColor: (color: HighlightColor) => void;
   toggleSidebar: () => void;

@@ -1,5 +1,6 @@
 import { BookReader } from '../components/book/BookReader';
 import { TemplateSwitcher } from '../components/book/TemplateSwitcher';
+import { PageSettings } from '../components/book/PageSettings';
 import { Toolbar } from '../components/editor/Toolbar';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { QuoteEditor } from '../components/editor/QuoteEditor';
@@ -26,6 +27,9 @@ export default function Home() {
 
       {/* 模板切换器 */}
       <TemplateSwitcher />
+
+      {/* 书页设置 */}
+      <PageSettings />
 
       {/* 编辑器弹窗 */}
       <QuoteEditor />

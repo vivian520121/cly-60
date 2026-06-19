@@ -32,6 +32,8 @@ body {
 
 .paper-texture {
   position: relative;
+  --paper-roughness: 0.08;
+  --paper-yellowing: 0;
 }
 
 .paper-texture::before {
@@ -39,7 +41,7 @@ body {
   position: absolute;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  opacity: 0.08;
+  opacity: var(--paper-roughness);
   pointer-events: none;
   mix-blend-mode: multiply;
 }
@@ -50,6 +52,20 @@ body {
   inset: 0;
   background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.06) 100%);
   pointer-events: none;
+}
+
+.paper-texture .yellowing-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 204, 102, var(--paper-yellowing)) 0%,
+    rgba(255, 187, 85, calc(var(--paper-yellowing) * 0.7)) 50%,
+    rgba(230, 153, 51, calc(var(--paper-yellowing) * 0.5)) 100%
+  );
+  mix-blend-mode: multiply;
+  z-index: 1;
 }
 
 .book-page {
