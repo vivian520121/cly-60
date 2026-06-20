@@ -17,6 +17,7 @@ export function QuoteEditor() {
     closeEditor,
     addQuote,
     updateQuote,
+    getBookQuotes,
   } = useQuoteStore();
 
   const editingQuote = quotes.find((q) => q.id === editingQuoteId);
@@ -30,32 +31,50 @@ export function QuoteEditor() {
     template: currentTemplate as BookTemplate,
   });
 
+  const [pageError, setPageError] = useState('');
+
   useEffect(() => {
-    if (editingQuote) {
-      setFormData({
-        content: editingQuote.content,
-        bookTitle: editingQuote.bookTitle,
-        author: editingQuote.author,
-        pageNumber: editingQuote.pageNumber,
-        tags: [...editingQuote.tags],
-        template: editingQuote.template,
-      });
-    } else {
-      setFormData({
-        content: '',
-        bookTitle: '',
-        author: '',
-        pageNumber: '',
-        tags: [],
-        template: currentTemplate,
-      });
+    if (editorOpen) {
+      if (editingQuote) {
+        setFormData({
+          content: editingQuote.content,
+          bookTitle: editingQuote.bookTitle,
+          author: editingQuote.author,
+          pageNumber: editingQuote.pageNumber,
+          tags: [...editingQuote.tags],
+          template: editingQuote.template,
+        });
+      } else {
+        setFormData({
+          content: '',
+          bookTitle: '',
+          author: '',
+          pageNumber: '',
+          tags: [],
+          template: currentTemplate,
+        });
+      }
+      setPageError('');
     }
-  }, [editingQuoteId, editingQuote, currentTemplate]);
+  }, [editorOpen, editingQuoteId, editingQuote, currentTemplate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.content.trim()) return;
+
+    const pageToCheck = formData.pageNumber.trim();
+    if (pageToCheck && currentBookId) {
+      const bookQuotes = getBookQuotes(currentBookId);
+      const duplicate = bookQuotes.find(
+        (q) => q.pageNumber === pageToCheck && q.id !== editingQuoteId
+      );
+      if (duplicate) {
+        setPageError(`页码 ${pageToCheck} 已存在，请更换页码`);
+        return;
+      }
+    }
+    setPageError('');
 
     if (editingQuoteId) {
       updateQuote(editingQuoteId, {
@@ -165,12 +184,18 @@ export function QuoteEditor() {
               <input
                 type="text"
                 value={formData.pageNumber}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, pageNumber: e.target.value }))
-                }
-                className="w-32 p-3 bg-white/70 border border-amber-200 rounded-xl text-amber-900 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-transparent font-serif"
+                onChange={(e) => {
+                  setFormData((prev) => ({ ...prev, pageNumber: e.target.value }));
+                  if (pageError) setPageError('');
+                }}
+                className={`w-32 p-3 bg-white/70 border rounded-xl text-amber-900 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-transparent font-serif ${
+                  pageError ? 'border-red-400 focus:ring-red-300' : 'border-amber-200'
+                }`}
                 placeholder="1"
               />
+              {pageError && (
+                <p className="mt-1.5 text-sm text-red-500">{pageError}</p>
+              )}
             </div>
 
             <div>
