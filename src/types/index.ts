@@ -1,5 +1,23 @@
 export type BookTemplate = 'ancient' | 'notebook' | 'newspaper' | 'letter';
 
+export type CoverSource = 'builtin' | 'upload';
+
+export interface CoverImage {
+  source: CoverSource;
+  value: string;
+}
+
+export interface Book {
+  id: string;
+  name: string;
+  description: string;
+  template: BookTemplate;
+  cover: CoverImage;
+  archived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PageSettings {
   yellowing: number;
   roughness: number;
@@ -25,6 +43,7 @@ export interface Annotation {
 
 export interface Quote {
   id: string;
+  bookId: string;
   content: string;
   bookTitle: string;
   author: string;
@@ -48,6 +67,8 @@ export interface Tag {
 export type ActiveTool = 'none' | 'highlight' | 'annotation' | 'bookmark' | 'edit';
 
 export interface QuoteStore {
+  books: Book[];
+  currentBookId: string | null;
   quotes: Quote[];
   tags: Tag[];
   currentQuoteIndex: number;
@@ -64,6 +85,9 @@ export interface QuoteStore {
   pageSettingsOpen: boolean;
   annotationsVisible: boolean;
   importModalOpen: boolean;
+  bookEditorOpen: boolean;
+  editingBookId: string | null;
+  showArchive: boolean;
 
   setCurrentTemplate: (template: BookTemplate) => void;
   toggleImportModal: () => void;
@@ -76,6 +100,20 @@ export interface QuoteStore {
   setFilterTagId: (tagId: string | null) => void;
   openEditor: (quoteId?: string) => void;
   closeEditor: () => void;
+  openBookEditor: (bookId?: string) => void;
+  closeBookEditor: () => void;
+  setCurrentBookId: (bookId: string | null) => void;
+  toggleShowArchive: () => void;
+
+  addBook: (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt' | 'archived'>) => void;
+  updateBook: (id: string, updates: Partial<Book>) => void;
+  deleteBook: (id: string) => void;
+  archiveBook: (id: string) => void;
+  unarchiveBook: (id: string) => void;
+  duplicateBook: (id: string) => void;
+  getActiveBooks: () => Book[];
+  getArchivedBooks: () => Book[];
+  getBookById: (id: string) => Book | undefined;
 
   addQuote: (quote: Omit<Quote, 'id' | 'createdAt' | 'updatedAt' | 'order'>) => void;
   importQuotes: (quotes: Omit<Quote, 'id' | 'createdAt' | 'updatedAt' | 'order'>[]) => number;
@@ -102,4 +140,7 @@ export interface QuoteStore {
   getCurrentQuote: () => Quote | null;
   getNextQuote: () => Quote | null;
   getTagById: (id: string) => Tag | undefined;
+  getBookQuotes: (bookId: string) => Quote[];
+  getBookQuoteCount: (bookId: string) => number;
+  getBookTagCount: (bookId: string) => number;
 }

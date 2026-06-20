@@ -13,6 +13,7 @@ export function QuoteEditor() {
     quotes,
     tags,
     currentTemplate,
+    currentBookId,
     closeEditor,
     addQuote,
     updateQuote,
@@ -67,6 +68,7 @@ export function QuoteEditor() {
       });
     } else {
       addQuote({
+        bookId: currentBookId || 'default',
         content: formData.content,
         bookTitle: formData.bookTitle || '无题',
         author: formData.author || '佚名',

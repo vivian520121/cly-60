@@ -183,8 +183,9 @@ export function readFileAsText(file: File): Promise<string> {
   });
 }
 
-export function convertToQuoteData(parsed: ParsedQuote): Omit<Quote, 'id' | 'createdAt' | 'updatedAt' | 'order'> {
+export function convertToQuoteData(parsed: ParsedQuote, bookId: string): Omit<Quote, 'id' | 'createdAt' | 'updatedAt' | 'order'> {
   return {
+    bookId,
     content: parsed.content,
     bookTitle: parsed.bookTitle,
     author: parsed.author,

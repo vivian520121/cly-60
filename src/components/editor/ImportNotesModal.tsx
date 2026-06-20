@@ -3,7 +3,7 @@ import { X, Upload, FileText, Check, Trash2, ChevronDown, ChevronUp } from 'luci
 import { useQuoteStore } from '../../store/useQuoteStore';
 import { parseNotes, readFileAsText, convertToQuoteData } from '../../utils/importNotes';
 import type { ParsedQuote } from '../../utils/importNotes';
-import type { BookTemplate } from '../types';
+import type { BookTemplate } from '../../types';
 import { templateStyles } from '../../utils/templateStyles';
 
 const templates: BookTemplate[] = ['ancient', 'notebook', 'newspaper', 'letter'];
@@ -14,7 +14,7 @@ interface EditableQuote extends ParsedQuote {
 }
 
 export function ImportNotesModal() {
-  const { importModalOpen, toggleImportModal, importQuotes, currentTemplate } = useQuoteStore();
+  const { importModalOpen, toggleImportModal, importQuotes, currentTemplate, currentBookId } = useQuoteStore();
   const [file, setFile] = useState<File | null>(null);
   const [parsedQuotes, setParsedQuotes] = useState<EditableQuote[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<BookTemplate>(currentTemplate);
@@ -130,7 +130,7 @@ export function ImportNotesModal() {
       return;
     }
 
-    const quoteData = selected.map(q => convertToQuoteData(q));
+    const quoteData = selected.map(q => convertToQuoteData(q, currentBookId || 'default'));
     const count = importQuotes(quoteData);
     setImportedCount(count);
     setImportSuccess(true);

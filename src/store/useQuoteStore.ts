@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
+  Book,
   Quote,
   Tag,
   BookTemplate,
@@ -10,6 +11,7 @@ import type {
   Highlight,
   Annotation,
   PageSettings,
+  CoverImage,
 } from '../types';
 
 const generateId = () => Math.random().toString(36).substring(2, 11);
@@ -28,9 +30,39 @@ const defaultTags: Tag[] = [
   { id: 'tag-5', name: '散文', color: '#26a69a' },
 ];
 
+const defaultBooks: Book[] = [
+  {
+    id: 'book-1',
+    name: '文学摘抄集',
+    description: '收录经典文学作品中的金句',
+    template: 'ancient',
+    cover: {
+      source: 'builtin',
+      value: 'cover-ancient-1',
+    },
+    archived: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'book-2',
+    name: '哲学随想录',
+    description: '哲学思考与人生感悟',
+    template: 'notebook',
+    cover: {
+      source: 'builtin',
+      value: 'cover-ancient-2',
+    },
+    archived: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
 const defaultQuotes: Quote[] = [
   {
     id: 'quote-1',
+    bookId: 'book-1',
     content: '生活不可能像你想象的那么好，但也不会像你想象的那么糟。我觉得人的脆弱和坚强都超乎自己的想象。有时，我可能脆弱得一句话就泪流满面；有时，也发现自己咬着牙走了很长的路。',
     bookTitle: '羊脂球',
     author: '莫泊桑',
@@ -51,7 +83,8 @@ const defaultQuotes: Quote[] = [
   },
   {
     id: 'quote-2',
-    content: '我们都在阴沟里，但仍有人仰望星空。我们都在阴沟里，但仍有人仰望星空。',
+    bookId: 'book-1',
+    content: '我们都在阴沟里，但仍有人仰望星空。',
     bookTitle: '温夫人的扇子',
     author: '奥斯卡·王尔德',
     pageNumber: '12',
@@ -68,6 +101,7 @@ const defaultQuotes: Quote[] = [
   },
   {
     id: 'quote-3',
+    bookId: 'book-1',
     content: '从前的日色变得慢，车、马、邮件都慢，一生只够爱一个人。',
     bookTitle: '从前慢',
     author: '木心',
@@ -87,6 +121,7 @@ const defaultQuotes: Quote[] = [
   },
   {
     id: 'quote-4',
+    bookId: 'book-2',
     content: '人最宝贵的是生命，生命对人来说只有一次。人的一生应当这样度过：当回忆往事的时候，他不会因为虚度年华而悔恨，也不会因为碌碌无为而羞愧。',
     bookTitle: '钢铁是怎样炼成的',
     author: '奥斯特洛夫斯基',
@@ -98,12 +133,13 @@ const defaultQuotes: Quote[] = [
     ],
     annotations: [],
     bookmarked: false,
-    order: 3,
+    order: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
     id: 'quote-5',
+    bookId: 'book-2',
     content: '愿你所有的快乐，无需假装；愿你此生尽兴，赤诚善良。愿时光能缓，愿故人不散；愿有人陪你颠沛流离，愿你惦念的人能和你道早安，愿你独闯的日子里不觉得孤单。',
     bookTitle: '愿你',
     author: '佚名',
@@ -113,12 +149,13 @@ const defaultQuotes: Quote[] = [
     highlights: [],
     annotations: [],
     bookmarked: false,
-    order: 4,
+    order: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
     id: 'quote-6',
+    bookId: 'book-2',
     content: '满地都是六便士，他却抬头看见了月亮。',
     bookTitle: '月亮与六便士',
     author: '毛姆',
@@ -132,7 +169,7 @@ const defaultQuotes: Quote[] = [
       { id: 'a3', content: '理想与现实的抉择', position: 5, startIndex: 0, endIndex: 14 },
     ],
     bookmarked: true,
-    order: 5,
+    order: 2,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -141,6 +178,8 @@ const defaultQuotes: Quote[] = [
 export const useQuoteStore = create<QuoteStore>()(
   persist(
     (set, get) => ({
+      books: defaultBooks,
+      currentBookId: 'book-1',
       quotes: defaultQuotes,
       tags: defaultTags,
       currentQuoteIndex: 0,
@@ -157,6 +196,9 @@ export const useQuoteStore = create<QuoteStore>()(
       pageSettingsOpen: false,
       annotationsVisible: true,
       importModalOpen: false,
+      bookEditorOpen: false,
+      editingBookId: null,
+      showArchive: false,
 
       setCurrentTemplate: (template: BookTemplate) => set({ currentTemplate: template }),
 
@@ -198,11 +240,139 @@ export const useQuoteStore = create<QuoteStore>()(
         });
       },
 
+      openBookEditor: (bookId?: string) => {
+        set({
+          bookEditorOpen: true,
+          editingBookId: bookId || null,
+        });
+      },
+
+      closeBookEditor: () => {
+        set({
+          bookEditorOpen: false,
+          editingBookId: null,
+        });
+      },
+
+      setCurrentBookId: (bookId: string | null) => {
+        set({ currentBookId: bookId, currentQuoteIndex: 0, filterTagId: null });
+      },
+
+      toggleShowArchive: () => {
+        set((state) => ({ showArchive: !state.showArchive }));
+      },
+
+      addBook: (bookData) => {
+        const newBook: Book = {
+          ...bookData,
+          id: generateId(),
+          archived: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          books: [...state.books, newBook],
+        }));
+      },
+
+      updateBook: (id, updates) => {
+        set((state) => ({
+          books: state.books.map((b) =>
+            b.id === id
+              ? { ...b, ...updates, updatedAt: new Date().toISOString() }
+              : b
+          ),
+        }));
+      },
+
+      deleteBook: (id) => {
+        set((state) => {
+          const filteredBooks = state.books.filter((b) => b.id !== id);
+          const filteredQuotes = state.quotes.filter((q) => q.bookId !== id);
+          const newCurrentBookId = state.currentBookId === id
+            ? (filteredBooks.find((b) => !b.archived)?.id || null)
+            : state.currentBookId;
+          return {
+            books: filteredBooks,
+            quotes: filteredQuotes,
+            currentBookId: newCurrentBookId,
+            currentQuoteIndex: 0,
+          };
+        });
+      },
+
+      archiveBook: (id) => {
+        set((state) => ({
+          books: state.books.map((b) =>
+            b.id === id
+              ? { ...b, archived: true, updatedAt: new Date().toISOString() }
+              : b
+          ),
+          currentBookId: state.currentBookId === id ? null : state.currentBookId,
+        }));
+      },
+
+      unarchiveBook: (id) => {
+        set((state) => ({
+          books: state.books.map((b) =>
+            b.id === id
+              ? { ...b, archived: false, updatedAt: new Date().toISOString() }
+              : b
+          ),
+        }));
+      },
+
+      duplicateBook: (id) => {
+        const state = get();
+        const originalBook = state.books.find((b) => b.id === id);
+        if (!originalBook) return;
+
+        const newBookId = generateId();
+        const now = new Date().toISOString();
+
+        const newBook: Book = {
+          ...originalBook,
+          id: newBookId,
+          name: `${originalBook.name} (副本)`,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        const originalQuotes = state.quotes.filter((q) => q.bookId === id);
+        const newQuotes: Quote[] = originalQuotes.map((q, index) => ({
+          ...q,
+          id: generateId(),
+          bookId: newBookId,
+          order: index,
+          createdAt: now,
+          updatedAt: now,
+          highlights: q.highlights.map((h) => ({ ...h, id: generateId() })),
+          annotations: q.annotations.map((a) => ({ ...a, id: generateId() })),
+        }));
+
+        set((s) => ({
+          books: [...s.books, newBook],
+          quotes: [...s.quotes, ...newQuotes],
+        }));
+      },
+
+      getActiveBooks: () => {
+        return get().books.filter((b) => !b.archived);
+      },
+
+      getArchivedBooks: () => {
+        return get().books.filter((b) => b.archived);
+      },
+
+      getBookById: (id) => {
+        return get().books.find((b) => b.id === id);
+      },
+
       addQuote: (quoteData) => {
         const newQuote: Quote = {
           ...quoteData,
           id: generateId(),
-          order: get().quotes.length,
+          order: get().quotes.filter((q) => q.bookId === quoteData.bookId).length,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -213,11 +383,10 @@ export const useQuoteStore = create<QuoteStore>()(
 
       importQuotes: (quotesData) => {
         const now = new Date().toISOString();
-        const baseOrder = get().quotes.length;
         const newQuotes: Quote[] = quotesData.map((quoteData, index) => ({
           ...quoteData,
           id: generateId(),
-          order: baseOrder + index,
+          order: index,
           createdAt: now,
           updatedAt: now,
         }));
@@ -239,8 +408,13 @@ export const useQuoteStore = create<QuoteStore>()(
 
       deleteQuote: (id) => {
         set((state) => {
+          const quote = state.quotes.find((q) => q.id === id);
+          const bookId = quote?.bookId;
           const filtered = state.quotes.filter((q) => q.id !== id);
-          const currentIndex = Math.min(state.currentQuoteIndex, Math.max(0, filtered.length - 1));
+          const bookQuotes = filtered.filter((q) => q.bookId === bookId);
+          const currentIndex = bookId === state.currentBookId
+            ? Math.min(state.currentQuoteIndex, Math.max(0, bookQuotes.length - 1))
+            : state.currentQuoteIndex;
           return {
             quotes: filtered,
             currentQuoteIndex: currentIndex,
@@ -397,10 +571,14 @@ export const useQuoteStore = create<QuoteStore>()(
 
       getFilteredQuotes: () => {
         const state = get();
+        const bookId = state.currentBookId;
+        let bookQuotes = bookId
+          ? state.quotes.filter((q) => q.bookId === bookId)
+          : state.quotes;
         if (!state.filterTagId) {
-          return [...state.quotes].sort((a, b) => a.order - b.order);
+          return [...bookQuotes].sort((a, b) => a.order - b.order);
         }
-        return state.quotes
+        return bookQuotes
           .filter((q) => q.tags.includes(state.filterTagId!))
           .sort((a, b) => a.order - b.order);
       },
@@ -419,12 +597,29 @@ export const useQuoteStore = create<QuoteStore>()(
       getTagById: (id) => {
         return get().tags.find((t) => t.id === id);
       },
+
+      getBookQuotes: (bookId) => {
+        return get().quotes.filter((q) => q.bookId === bookId);
+      },
+
+      getBookQuoteCount: (bookId) => {
+        return get().quotes.filter((q) => q.bookId === bookId).length;
+      },
+
+      getBookTagCount: (bookId) => {
+        const bookQuotes = get().quotes.filter((q) => q.bookId === bookId);
+        const tagSet = new Set<string>();
+        bookQuotes.forEach((q) => q.tags.forEach((t) => tagSet.add(t)));
+        return tagSet.size;
+      },
     }),
     {
       name: 'quote-book-storage',
       partialize: (state) => ({
+        books: state.books,
         quotes: state.quotes,
         tags: state.tags,
+        currentBookId: state.currentBookId,
         currentTemplate: state.currentTemplate,
         pageSettings: state.pageSettings,
       }),
