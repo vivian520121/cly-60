@@ -25,6 +25,8 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     currentTemplate,
     pageSettings,
     annotationsVisible,
+    searchQuery,
+    searchHighlightQuoteId,
   } = useQuoteStore();
 
   const [showAnnotationInput, setShowAnnotationInput] = useState(false);
@@ -205,7 +207,9 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
     <div
       className={`book-page paper-texture ${
         pageSide === 'left' ? 'book-page-left page-edge-left' : 'book-page-right page-edge-right'
-      } ${pageBgClass} flex-1 h-full relative overflow-hidden flex flex-col`}
+      } ${pageBgClass} flex-1 h-full relative overflow-hidden flex flex-col ${
+        quote && searchHighlightQuoteId === quote.id ? 'search-page-glow' : ''
+      }`}
       style={pageStyle}
       onClick={handlePageClick}
       onMouseUp={handleMouseUp}
@@ -238,6 +242,7 @@ export function BookPage({ quote, pageSide, pageNumber, totalPages, template }: 
             highlights={quote.highlights}
             annotations={quote.annotations}
             annotationsVisible={annotationsVisible}
+            searchQuery={searchQuery}
             onHighlightClick={handleHighlightClick}
             onAnnotationClick={handleAnnotationClick}
           />

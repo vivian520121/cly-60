@@ -1,4 +1,4 @@
-import { Highlighter, MessageSquare, Bookmark, Edit3, Plus, Menu, Eye, EyeOff } from 'lucide-react';
+import { Highlighter, MessageSquare, Bookmark, Edit3, Plus, Menu, Eye, EyeOff, Search } from 'lucide-react';
 import { useQuoteStore } from '../../store/useQuoteStore';
 import type { ActiveTool, HighlightColor } from '../../types';
 
@@ -29,6 +29,7 @@ export function Toolbar() {
     getCurrentQuote,
     annotationsVisible,
     toggleAnnotations,
+    toggleSearch,
   } = useQuoteStore();
   const currentQuote = getCurrentQuote();
 
@@ -54,6 +55,14 @@ export function Toolbar() {
 
       <div className="fixed top-6 right-6 z-40">
         <div className="flex flex-col gap-2">
+          <button
+            onClick={toggleSearch}
+            className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg flex items-center justify-center text-gray-600 hover:bg-white hover:text-gray-800 transition-all duration-300 hover:scale-105"
+            title="全文搜索 (Ctrl+F)"
+          >
+            <Search size={18} />
+          </button>
+
           {tools.map((tool) => {
             const Icon = tool.icon;
             const isActive = activeTool === tool.id;

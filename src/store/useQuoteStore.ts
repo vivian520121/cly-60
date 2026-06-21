@@ -12,6 +12,7 @@ import type {
   Annotation,
   PageSettings,
   CoverImage,
+  SearchMatch,
 } from '../types';
 
 const generateId = () => Math.random().toString(36).substring(2, 11);
@@ -199,6 +200,10 @@ export const useQuoteStore = create<QuoteStore>()(
       bookEditorOpen: false,
       editingBookId: null,
       showArchive: false,
+      searchOpen: false,
+      searchQuery: '',
+      searchResults: [],
+      searchHighlightQuoteId: null,
 
       setCurrentTemplate: (template: BookTemplate) => set({ currentTemplate: template }),
 
@@ -611,6 +616,101 @@ export const useQuoteStore = create<QuoteStore>()(
         const tagSet = new Set<string>();
         bookQuotes.forEach((q) => q.tags.forEach((t) => tagSet.add(t)));
         return tagSet.size;
+      },
+
+      getQuoteById: (id) => {
+        return get().quotes.find((q) => q.id === id);
+      },
+
+      toggleSearch: () =>
+        set((state) => ({ searchOpen: !state.searchOpen })),
+
+      setSearchQuery: (query: string) => set({ searchQuery: query }),
+
+      performSearch: (query: string) => {
+        const state = get();
+        const trimmedQuery = query.trim().toLowerCase();
+
+        if (!trimmedQuery) {
+          set({ searchResults: [], searchQuery: query });
+          return;
+        }
+
+        const results: SearchMatch[] = [];
+        const bookId = state.currentBookId;
+        const quotesToSearch = bookId
+          ? state.quotes.filter((q) => q.bookId === bookId)
+          : state.quotes;
+
+        for (const quote of quotesToSearch) {
+          const contentLower = quote.content.toLowerCase();
+          let idx = contentLower.indexOf(trimmedQuery);
+          while (idx !== -1) {
+            results.push({
+              type: 'content',
+              quoteId: quote.id,
+              text: quote.content,
+              matchedText: quote.content.slice(idx, idx + trimmedQuery.length),
+              startIndex: idx,
+              endIndex: idx + trimmedQuery.length,
+            });
+            idx = contentLower.indexOf(trimmedQuery, idx + 1);
+          }
+
+          for (const annotation of quote.annotations) {
+            const annLower = annotation.content.toLowerCase();
+            let annIdx = annLower.indexOf(trimmedQuery);
+            while (annIdx !== -1) {
+              results.push({
+                type: 'annotation',
+                quoteId: quote.id,
+                text: quote.content,
+                matchedText: annotation.content.slice(annIdx, annIdx + trimmedQuery.length),
+                startIndex: annotation.startIndex ?? annotation.position,
+                endIndex: annotation.endIndex ?? annotation.position + 1,
+                annotationId: annotation.id,
+                annotationContent: annotation.content,
+              });
+              annIdx = annLower.indexOf(trimmedQuery, annIdx + 1);
+            }
+          }
+
+          if (quote.bookmarked) {
+            const bookmarkLower = '书签'.toLowerCase();
+            if (trimmedQuery === '书签' || trimmedQuery.includes('书签') || bookmarkLower.includes(trimmedQuery)) {
+              results.push({
+                type: 'bookmark',
+                quoteId: quote.id,
+                text: quote.content,
+                matchedText: '书签',
+                startIndex: 0,
+                endIndex: Math.min(5, quote.content.length),
+              });
+            }
+          }
+        }
+
+        set({ searchResults: results, searchQuery: query });
+      },
+
+      clearSearch: () => {
+        set({ searchQuery: '', searchResults: [], searchHighlightQuoteId: null });
+      },
+
+      setSearchHighlightQuoteId: (quoteId: string | null) => {
+        set({ searchHighlightQuoteId: quoteId });
+      },
+
+      jumpToSearchResult: (match: SearchMatch) => {
+        const state = get();
+        const filteredQuotes = state.getFilteredQuotes();
+        const index = filteredQuotes.findIndex((q) => q.id === match.quoteId);
+        if (index !== -1) {
+          set({ currentQuoteIndex: index, searchHighlightQuoteId: match.quoteId, searchOpen: false });
+          setTimeout(() => {
+            set({ searchHighlightQuoteId: null });
+          }, 3000);
+        }
       },
     }),
     {

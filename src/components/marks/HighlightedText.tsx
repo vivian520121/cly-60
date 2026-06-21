@@ -6,6 +6,7 @@ interface HighlightedTextProps {
   highlights: Highlight[];
   annotations: Annotation[];
   annotationsVisible?: boolean;
+  searchQuery?: string;
   onHighlightClick?: (highlightId: string) => void;
   onAnnotationClick?: (annotation: Annotation) => void;
 }
@@ -17,6 +18,7 @@ interface TextSegment {
   color: HighlightColor | null;
   hasAnnotation: boolean;
   annotationId: string | null;
+  isSearchMatch: boolean;
 }
 
 export function HighlightedText({
@@ -24,22 +26,13 @@ export function HighlightedText({
   highlights,
   annotations,
   annotationsVisible = true,
+  searchQuery = '',
   onHighlightClick,
   onAnnotationClick,
 }: HighlightedTextProps) {
   const renderedContent = useMemo(() => {
-    if (highlights.length === 0 && (annotations.length === 0 || !annotationsVisible)) {
-      return [
-        {
-          text,
-          isHighlighted: false,
-          highlightId: null,
-          color: null,
-          hasAnnotation: false,
-          annotationId: null,
-        },
-      ] as TextSegment[];
-    }
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+    const hasSearchQuery = trimmedQuery.length > 0;
 
     const breakpoints = new Set<number>();
     breakpoints.add(0);
@@ -56,6 +49,16 @@ export function HighlightedText({
         const end = a.endIndex ?? a.position + 1;
         breakpoints.add(start);
         breakpoints.add(end);
+      }
+    }
+
+    if (hasSearchQuery) {
+      const lowerText = text.toLowerCase();
+      let idx = lowerText.indexOf(trimmedQuery);
+      while (idx !== -1) {
+        breakpoints.add(idx);
+        breakpoints.add(idx + trimmedQuery.length);
+        idx = lowerText.indexOf(trimmedQuery, idx + 1);
       }
     }
 
@@ -100,6 +103,14 @@ export function HighlightedText({
         }
       }
 
+      let isSearchMatch = false;
+      if (hasSearchQuery) {
+        const segmentLower = segmentText.toLowerCase();
+        if (segmentLower === trimmedQuery || (segmentLower.includes(trimmedQuery) && segmentLower.length <= trimmedQuery.length + 2)) {
+          isSearchMatch = true;
+        }
+      }
+
       segments.push({
         text: segmentText,
         isHighlighted,
@@ -107,11 +118,12 @@ export function HighlightedText({
         color,
         hasAnnotation,
         annotationId,
+        isSearchMatch,
       });
     }
 
     return segments;
-  }, [text, highlights, annotations, annotationsVisible]);
+  }, [text, highlights, annotations, annotationsVisible, searchQuery]);
 
   return (
     <span className="inline">
@@ -127,7 +139,10 @@ export function HighlightedText({
         if (segment.hasAnnotation && annotationsVisible) {
           classNames.push('annotation-mark');
         }
-        if (segment.isHighlighted || segment.hasAnnotation) {
+        if (segment.isSearchMatch) {
+          classNames.push('search-highlight');
+        }
+        if (segment.isHighlighted || segment.hasAnnotation || segment.isSearchMatch) {
           classNames.push('cursor-pointer transition-all hover:opacity-80');
         }
 

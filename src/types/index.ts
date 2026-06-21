@@ -66,6 +66,19 @@ export interface Tag {
 
 export type ActiveTool = 'none' | 'highlight' | 'annotation' | 'bookmark' | 'edit';
 
+export type SearchMatchType = 'content' | 'annotation' | 'bookmark';
+
+export interface SearchMatch {
+  type: SearchMatchType;
+  quoteId: string;
+  text: string;
+  matchedText: string;
+  startIndex: number;
+  endIndex: number;
+  annotationId?: string;
+  annotationContent?: string;
+}
+
 export interface QuoteStore {
   books: Book[];
   currentBookId: string | null;
@@ -88,6 +101,10 @@ export interface QuoteStore {
   bookEditorOpen: boolean;
   editingBookId: string | null;
   showArchive: boolean;
+  searchOpen: boolean;
+  searchQuery: string;
+  searchResults: SearchMatch[];
+  searchHighlightQuoteId: string | null;
 
   setCurrentTemplate: (template: BookTemplate) => void;
   toggleImportModal: () => void;
@@ -143,4 +160,12 @@ export interface QuoteStore {
   getBookQuotes: (bookId: string) => Quote[];
   getBookQuoteCount: (bookId: string) => number;
   getBookTagCount: (bookId: string) => number;
+  getQuoteById: (id: string) => Quote | undefined;
+
+  toggleSearch: () => void;
+  setSearchQuery: (query: string) => void;
+  performSearch: (query: string) => void;
+  clearSearch: () => void;
+  setSearchHighlightQuoteId: (quoteId: string | null) => void;
+  jumpToSearchResult: (match: SearchMatch) => void;
 }

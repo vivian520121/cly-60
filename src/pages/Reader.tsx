@@ -7,6 +7,7 @@ import { Toolbar } from '../components/editor/Toolbar';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { QuoteEditor } from '../components/editor/QuoteEditor';
 import { ImportNotesModal } from '../components/editor/ImportNotesModal';
+import { SearchModal } from '../components/search/SearchModal';
 import { useQuoteStore } from '../store/useQuoteStore';
 import { ArrowLeft, BookMarked } from 'lucide-react';
 
@@ -92,6 +93,8 @@ export default function Reader() {
       <QuoteEditor />
 
       <ImportNotesModal />
+
+      <SearchModal />
     </div>
   );
 }
